@@ -1,0 +1,15 @@
+version: '3'
+services:
+  application:
+    container_name: slack_standup
+    restart: always
+    build: .
+    volumes:
+      - ../..:/go/src/github.com/vehsamrak/slack-standup
+      - /etc/localtime:/etc/localtime:ro
+    entrypoint: /go/src/github.com/vehsamrak/slack-standup/build/package/entrypoint-dev.sh
+    networks:
+      - slack_standup
+
+networks:
+  slack_standup:
