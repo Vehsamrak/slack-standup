@@ -1,10 +1,18 @@
 package app
 
-import "fmt"
+import (
+	"fmt"
+)
 
-type Bot struct{}
+type Bot struct {
+}
 
-func (bot Bot) Start() {
-	fmt.Print("Bot started")
-	fmt.Print("Bot stopped")
+func (Bot) Start(config *Config) {
+	fmt.Printf("Bot started\n")
+
+	slack := Slack{}.Create(config)
+
+	slack.sendMessageToChannel("C01E4KK06DP", "test from golang!")
+
+	fmt.Printf("Bot stopped\n")
 }
