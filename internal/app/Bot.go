@@ -28,7 +28,7 @@ func (bot Bot) Start(config *Config) {
 
 func (bot *Bot) listenIncomingMessages() {
 	controllerMap := map[string]func(http.ResponseWriter, *http.Request){
-		"/":     controller.SlackController{}.Entrypoint,
+		"/":     controller.SlackController{}.Ping,
 		"/ping": controller.SlackController{}.Ping,
 	}
 
