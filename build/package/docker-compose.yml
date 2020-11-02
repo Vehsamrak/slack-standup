@@ -9,6 +9,8 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - slack_standup_libraries:/go/src
     entrypoint: /go/src/github.com/vehsamrak/slack-standup/build/package/entrypoint-dev.sh
+    ports:
+      - 7711:7711
     networks:
       - slack_standup
 

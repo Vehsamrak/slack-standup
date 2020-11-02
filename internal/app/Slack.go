@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/vehsamrak/slack-standup/internal/app/response/conversationsList"
 	"github.com/vehsamrak/slack-standup/internal/app/response/conversationsMembers"
 	"github.com/vehsamrak/slack-standup/internal/app/response/conversationsOpen"
@@ -25,6 +26,7 @@ func (slack *Slack) botInfo() {
 
 func (slack *Slack) channelUsersList(channelName string) *conversationsMembers.Users {
 	response := slack.callApi("conversations.members", url.Values{"channel": {channelName}})
+	//response := []byte("{\"ok\": true, \"members\": [\"U01DB949P8X\",\"U01DNTUGMMK\"],\"response_metadata\": {\"next_cursor\":\"\"}}")
 	users := &conversationsMembers.Users{}
 
 	err := json.Unmarshal(response, &users)
@@ -93,7 +95,7 @@ func (slack *Slack) callApi(method string, parameters url.Values) []byte {
 		parameters = url.Values{}
 	}
 
-	fmt.Printf("Calling API: %s [%s]\n", method, parameters.Encode())
+	log.Infof("Calling API: %s [%s]\n", method, parameters.Encode())
 
 	parameters.Add("token", slack.Config.Token)
 	parameters.Add("pretty", "1")
@@ -106,7 +108,7 @@ func (slack *Slack) callApi(method string, parameters url.Values) []byte {
 
 	body, err := ioutil.ReadAll(resp.Body)
 
-	fmt.Printf("%s\n", body)
+	log.Infof("%s\n", body)
 
 	return body
 }
