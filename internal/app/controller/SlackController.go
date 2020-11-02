@@ -52,9 +52,16 @@ func (controller *SlackController) Entrypoint(response http.ResponseWriter, requ
 		return
 	}
 
+	if event.Message.BotId != "" {
+		log.Infof("User is bot. Skipping interaction: %v", event)
+		controller.Respond(response, "", http.StatusOK)
+		return
+	}
+
 	userId := event.Message.UserId
 	if userId == "" {
 		log.Infof("User has no id: %v", event)
+		controller.Respond(response, "", http.StatusBadRequest)
 		return
 	}
 
