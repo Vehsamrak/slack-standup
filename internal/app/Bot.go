@@ -1,9 +1,11 @@
 package app
 
 import (
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	config2 "github.com/vehsamrak/slack-standup/internal/app/config"
 	"github.com/vehsamrak/slack-standup/internal/app/controller"
+	"github.com/vehsamrak/slack-standup/internal/app/meeting"
 	"github.com/vehsamrak/slack-standup/internal/app/slack"
 	"github.com/vehsamrak/slack-standup/internal/logger"
 	"net/http"
@@ -22,8 +24,8 @@ func (bot Bot) Start(config *config2.Config) {
 
 	log.Info("Bot started")
 
-	bot.listenIncomingMessages()
-	//bot.startStandUp()
+	//bot.listenIncomingMessages()
+	bot.StartMeeting()
 
 	log.Info("Bot stopped")
 }
@@ -47,7 +49,23 @@ func (bot *Bot) listenIncomingMessages() {
 	}
 }
 
-func (bot *Bot) startStandUp() {
+func (bot *Bot) StartMeeting() {
+	log.Info("Standup meeting created")
+
+	// TODO[petr]: how to receive channel name?
+	channelName := "d"
+	thread := bot.slack.SendMessageToChannelByName(channelName, "Начинается утренний стэндап!")
+	if thread == nil {
+		log.Info("Standup meeting ended with error. No thread found")
+		return
+	}
+
+	standup := meeting.Meeting{}.Create(thread)
+
+	bot.StartStandUpInChannel(standup)
+}
+
+func (bot *Bot) StartStandUpInChannel(standup *meeting.Meeting) {
 	// TODO[petr]: how to receive channel name?
 	channelName := "d"
 	channel := bot.slack.FindChannelByName(channelName)
@@ -61,8 +79,11 @@ func (bot *Bot) startStandUp() {
 		}
 
 		bot.slack.SendMessageToChannel(privateUserChannel.Id, "Начинается утренний стэндап!")
-		bot.slack.SendMessageToChannel(privateUserChannel.Id, "*Удалось выполнить вчерашний план?*")
-		bot.slack.SendMessageToChannel(privateUserChannel.Id, "*Что планируешь сделать сегодня?*")
-		bot.slack.SendMessageToChannel(privateUserChannel.Id, "*Кто и чем может тебе помочь?*")
+		bot.slack.SendMessageToChannel(privateUserChannel.Id, fmt.Sprintf("*%s*", standup.QuestionPrevious()))
+
+		// TODO[petr]: enable standup
+		// TODO[petr]: disable standup after last question posted
+		// TODO[petr]: if all 3 answers, add message to thread
+		bot.slack.SendReplyToChannel(standup.Thread.Channel, "Ответы", standup.Thread.Thread)
 	}
 }

@@ -29,7 +29,7 @@ func (controller *SlackController) Ping(response http.ResponseWriter, request *h
 		return
 	}
 
-	log.Infof("Ping requested: %#v", string(body))
+	log.Infof("Ping requested: %v", string(body))
 
 	controller.Respond(response, fmt.Sprintf("{\"challenge\":\"%s\"}", ping.Challenge), http.StatusOK)
 }
@@ -53,14 +53,14 @@ func (controller *SlackController) Entrypoint(response http.ResponseWriter, requ
 	}
 
 	if event.Message.BotId != "" {
-		log.Infof("User is bot. Skipping interaction: %v", event)
+		log.Infof("User is bot. Skipping interaction: %#v", event)
 		controller.Respond(response, "", http.StatusOK)
 		return
 	}
 
 	userId := event.Message.UserId
 	if userId == "" {
-		log.Infof("User has no id: %v", event)
+		log.Infof("User has no id: %#v", event)
 		controller.Respond(response, "", http.StatusBadRequest)
 		return
 	}
@@ -71,9 +71,9 @@ func (controller *SlackController) Entrypoint(response http.ResponseWriter, requ
 	}
 
 	controller.slack.SendMessageToChannel(privateUserChannel.Id, "Начинается утренний стэндап!")
-	controller.slack.SendMessageToChannel(privateUserChannel.Id, "*Удалось выполнить вчерашний план?*")
+	controller.slack.SendMessageToChannel(privateUserChannel.Id, "*Удалось выполнить предыдущий план?*")
 	controller.slack.SendMessageToChannel(privateUserChannel.Id, "*Что планируешь сделать сегодня?*")
-	controller.slack.SendMessageToChannel(privateUserChannel.Id, "*Кто и чем может тебе помочь?*")
+	controller.slack.SendMessageToChannel(privateUserChannel.Id, "*Кто и чем может тебе в этом помочь?*")
 
 	controller.Respond(response, "", http.StatusOK)
 }

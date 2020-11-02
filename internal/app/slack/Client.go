@@ -5,6 +5,7 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/vehsamrak/slack-standup/internal/app/config"
+	"github.com/vehsamrak/slack-standup/internal/app/response/chatPostMessage"
 	"github.com/vehsamrak/slack-standup/internal/app/response/conversationsList"
 	"github.com/vehsamrak/slack-standup/internal/app/response/conversationsMembers"
 	"github.com/vehsamrak/slack-standup/internal/app/response/conversationsOpen"
@@ -27,7 +28,6 @@ func (slack *Client) botInfo() {
 
 func (slack *Client) ChannelUsersList(channelName string) *conversationsMembers.Users {
 	response := slack.callApi("conversations.members", url.Values{"channel": {channelName}})
-	//response := []byte("{\"ok\": true, \"members\": [\"U01DB949P8X\",\"U01DNTUGMMK\"],\"response_metadata\": {\"next_cursor\":\"\"}}")
 	users := &conversationsMembers.Users{}
 
 	err := json.Unmarshal(response, &users)
@@ -61,10 +61,31 @@ func (slack *Client) FindChannelByName(channelName string) *conversationsList.Ch
 	return nil
 }
 
-func (slack *Client) SendMessageToChannel(channel string, message string) {
+func (slack *Client) SendMessageToChannelByName(channelName string, message string) *chatPostMessage.Thread {
+	channel := slack.FindChannelByName(channelName)
+	if channel == nil {
+		log.Info("Channel was not found. Can not send message", channelName)
+		return nil
+	}
+
+	response := slack.callApi(
+		"chat.postMessage",
+		url.Values{"channel": {channel.Id}, "text": {message}},
+	)
+
+	thread := &chatPostMessage.Thread{}
+	err := json.Unmarshal(response, &thread)
+	if err != nil {
+		panic(err)
+	}
+
+	return thread
+}
+
+func (slack *Client) SendMessageToChannel(channelId string, message string) {
 	slack.callApi(
 		"chat.postMessage",
-		url.Values{"channel": {channel}, "text": {message}},
+		url.Values{"channel": {channelId}, "text": {message}},
 	)
 }
 
