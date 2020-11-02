@@ -28,7 +28,7 @@ func (controller SlackController) Ping(response http.ResponseWriter, request *ht
 		panic(err)
 	}
 
-	log.Infof("Ping requested: %#v", body)
+	log.Infof("Ping requested: %#v", string(body))
 
 	controller.Respond(response, fmt.Sprintf("{\"challenge\":\"%s\"}", ping.Challenge), http.StatusOK)
 }
