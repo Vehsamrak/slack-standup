@@ -2,21 +2,23 @@ package app
 
 import (
 	log "github.com/sirupsen/logrus"
+	config2 "github.com/vehsamrak/slack-standup/internal/app/config"
 	"github.com/vehsamrak/slack-standup/internal/app/controller"
+	"github.com/vehsamrak/slack-standup/internal/app/slack"
 	"github.com/vehsamrak/slack-standup/internal/logger"
 	"net/http"
 	"strconv"
 )
 
 type Bot struct {
-	slack  *Slack
-	config *Config
+	slack  *slack.Client
+	config *config2.Config
 }
 
-func (bot Bot) Start(config *Config) {
+func (bot Bot) Start(config *config2.Config) {
 	log.SetFormatter(&logger.TextFormatter{})
 	bot.config = config
-	bot.slack = Slack{}.Create(config)
+	bot.slack = slack.Client{}.Create(config)
 
 	log.Info("Bot started")
 
@@ -27,9 +29,11 @@ func (bot Bot) Start(config *Config) {
 }
 
 func (bot *Bot) listenIncomingMessages() {
+	slackController := controller.SlackController{}.Create(bot.slack)
+
 	controllerMap := map[string]func(http.ResponseWriter, *http.Request){
-		"/":     controller.SlackController{}.Ping,
-		"/ping": controller.SlackController{}.Ping,
+		"/":     slackController.Entrypoint,
+		"/ping": slackController.Ping,
 	}
 
 	for route, controllerFunction := range controllerMap {
@@ -46,19 +50,19 @@ func (bot *Bot) listenIncomingMessages() {
 func (bot *Bot) startStandUp() {
 	// TODO[petr]: how to receive channel name?
 	channelName := "d"
-	channel := bot.slack.findChannelByName(channelName)
-	users := bot.slack.channelUsersList(channel.Id)
+	channel := bot.slack.FindChannelByName(channelName)
+	users := bot.slack.ChannelUsersList(channel.Id)
 
 	for _, userId := range users.Ids {
-		privateUserChannel := bot.slack.openChatWithUser(userId)
+		privateUserChannel := bot.slack.OpenChatWithUser(userId)
 
 		if privateUserChannel.Id == "" {
 			continue
 		}
 
-		bot.slack.sendMessageToChannel(privateUserChannel.Id, "Начинается утренний стэндап!")
-		bot.slack.sendMessageToChannel(privateUserChannel.Id, "*Удалось выполнить вчерашний план?*")
-		bot.slack.sendMessageToChannel(privateUserChannel.Id, "*Что планируешь сделать сегодня?*")
-		bot.slack.sendMessageToChannel(privateUserChannel.Id, "*Кто и чем может тебе помочь?*")
+		bot.slack.SendMessageToChannel(privateUserChannel.Id, "Начинается утренний стэндап!")
+		bot.slack.SendMessageToChannel(privateUserChannel.Id, "*Удалось выполнить вчерашний план?*")
+		bot.slack.SendMessageToChannel(privateUserChannel.Id, "*Что планируешь сделать сегодня?*")
+		bot.slack.SendMessageToChannel(privateUserChannel.Id, "*Кто и чем может тебе помочь?*")
 	}
 }

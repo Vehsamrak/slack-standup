@@ -1,9 +1,10 @@
-package app
+package slack
 
 import (
 	"encoding/json"
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"github.com/vehsamrak/slack-standup/internal/app/config"
 	"github.com/vehsamrak/slack-standup/internal/app/response/conversationsList"
 	"github.com/vehsamrak/slack-standup/internal/app/response/conversationsMembers"
 	"github.com/vehsamrak/slack-standup/internal/app/response/conversationsOpen"
@@ -12,19 +13,19 @@ import (
 	"net/url"
 )
 
-type Slack struct {
-	Config *Config
+type Client struct {
+	Config *config.Config
 }
 
-func (Slack) Create(config *Config) *Slack {
-	return &Slack{Config: config}
+func (Client) Create(config *config.Config) *Client {
+	return &Client{Config: config}
 }
 
-func (slack *Slack) botInfo() {
+func (slack *Client) botInfo() {
 	slack.callApi("bots.info", nil)
 }
 
-func (slack *Slack) channelUsersList(channelName string) *conversationsMembers.Users {
+func (slack *Client) ChannelUsersList(channelName string) *conversationsMembers.Users {
 	response := slack.callApi("conversations.members", url.Values{"channel": {channelName}})
 	//response := []byte("{\"ok\": true, \"members\": [\"U01DB949P8X\",\"U01DNTUGMMK\"],\"response_metadata\": {\"next_cursor\":\"\"}}")
 	users := &conversationsMembers.Users{}
@@ -37,7 +38,7 @@ func (slack *Slack) channelUsersList(channelName string) *conversationsMembers.U
 	return users
 }
 
-func (slack *Slack) channelsList() *conversationsList.ChannelsList {
+func (slack *Client) channelsList() *conversationsList.ChannelsList {
 	response := slack.callApi("conversations.list", url.Values{"exclude_archived": {"true"}})
 	channels := &conversationsList.ChannelsList{}
 
@@ -49,7 +50,7 @@ func (slack *Slack) channelsList() *conversationsList.ChannelsList {
 	return channels
 }
 
-func (slack *Slack) findChannelByName(channelName string) *conversationsList.Channel {
+func (slack *Client) FindChannelByName(channelName string) *conversationsList.Channel {
 	channels := slack.channelsList()
 	for _, channel := range channels.Channels {
 		if channel.Name == channelName {
@@ -60,21 +61,21 @@ func (slack *Slack) findChannelByName(channelName string) *conversationsList.Cha
 	return nil
 }
 
-func (slack *Slack) sendMessageToChannel(channel string, message string) {
+func (slack *Client) SendMessageToChannel(channel string, message string) {
 	slack.callApi(
 		"chat.postMessage",
 		url.Values{"channel": {channel}, "text": {message}},
 	)
 }
 
-func (slack *Slack) sendReplyToChannel(channel string, message string, thread string) {
+func (slack *Client) SendReplyToChannel(channel string, message string, thread string) {
 	slack.callApi(
 		"chat.postMessage",
 		url.Values{"channel": {channel}, "text": {message}, "thread_ts": {thread}},
 	)
 }
 
-func (slack *Slack) openChatWithUser(userName string) *conversationsOpen.Channel {
+func (slack *Client) OpenChatWithUser(userName string) *conversationsOpen.Channel {
 	response := slack.callApi(
 		"conversations.open",
 		url.Values{"users": {userName}},
@@ -90,7 +91,7 @@ func (slack *Slack) openChatWithUser(userName string) *conversationsOpen.Channel
 	return &conversation.Channel
 }
 
-func (slack *Slack) callApi(method string, parameters url.Values) []byte {
+func (slack *Client) callApi(method string, parameters url.Values) []byte {
 	if parameters == nil {
 		parameters = url.Values{}
 	}
