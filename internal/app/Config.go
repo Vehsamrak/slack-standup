@@ -9,7 +9,8 @@ import (
 )
 
 type Config struct {
-	Token string `yaml:"token"`
+	Token  string `yaml:"token"`
+	ApiUrl string `yaml:"api_url"`
 }
 
 func (Config) Load() *Config {
