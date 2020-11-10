@@ -9,6 +9,7 @@ import (
 	"github.com/vehsamrak/slack-standup/internal/app/response/conversationsList"
 	"github.com/vehsamrak/slack-standup/internal/app/response/conversationsMembers"
 	"github.com/vehsamrak/slack-standup/internal/app/response/conversationsOpen"
+	"github.com/vehsamrak/slack-standup/internal/app/response/usersInfo"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -110,6 +111,22 @@ func (slack *Client) OpenChatWithUser(userName string) *conversationsOpen.Channe
 	}
 
 	return &conversation.Channel
+}
+
+func (slack *Client) UserInfo(userId string) *usersInfo.User {
+	response := slack.callApi(
+		"users.info",
+		url.Values{"user": {userId}},
+	)
+
+	userResponse := &usersInfo.UserResponse{}
+
+	err := json.Unmarshal(response, &userResponse)
+	if err != nil {
+		panic(err)
+	}
+
+	return &userResponse.User
 }
 
 func (slack *Client) callApi(method string, parameters url.Values) []byte {

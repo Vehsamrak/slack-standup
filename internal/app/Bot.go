@@ -72,7 +72,8 @@ func (bot *Bot) startStandUpInChannel(standup *meeting.Meeting) {
 	users := bot.slack.ChannelUsersList(channel.Id)
 
 	for _, userId := range users.Ids {
-		log.Infof("Starting standup for user #%s", userId)
+		user := bot.slack.UserInfo(userId)
+		log.Infof("Starting standup for user \"%s\" #%s", user.Name, user.Id)
 		standup.Participants[userId] = &meeting.Questions{}
 
 		go bot.startStandUpForUser(standup, userId)
