@@ -10,11 +10,13 @@ import (
 	"github.com/vehsamrak/slack-standup/internal/logger"
 	"net/http"
 	"strconv"
+	"sync"
 )
 
 type Bot struct {
-	slack  *slack.Client
-	config *config2.Config
+	slack            *slack.Client
+	config           *config2.Config
+	answersWaitGroup sync.WaitGroup
 }
 
 func (bot Bot) Start(config *config2.Config) {
@@ -24,8 +26,11 @@ func (bot Bot) Start(config *config2.Config) {
 
 	log.Info("Bot started")
 
-	//bot.listenIncomingMessages()
-	bot.StartMeeting()
+	//bot.StartMeeting()
+
+	bot.listenIncomingMessages()
+	//bot.answersWaitGroup.Add(1)
+	//bot.answersWaitGroup.Wait()
 
 	log.Info("Bot stopped")
 }
@@ -43,6 +48,9 @@ func (bot *Bot) listenIncomingMessages() {
 	}
 
 	httpServer := &http.Server{Addr: ":" + strconv.Itoa(bot.config.Port)}
+
+	log.Infof("Incoming Slack messages listener started on port %d", bot.config.Port)
+
 	err := httpServer.ListenAndServe()
 	if err != nil {
 		panic(err)
@@ -72,18 +80,24 @@ func (bot *Bot) StartStandUpInChannel(standup *meeting.Meeting) {
 	users := bot.slack.ChannelUsersList(channel.Id)
 
 	for _, userId := range users.Ids {
-		privateUserChannel := bot.slack.OpenChatWithUser(userId)
-
-		if privateUserChannel.Id == "" {
-			continue
-		}
-
-		bot.slack.SendMessageToChannel(privateUserChannel.Id, "Начинается утренний стэндап!")
-		bot.slack.SendMessageToChannel(privateUserChannel.Id, fmt.Sprintf("*%s*", standup.QuestionPrevious()))
-
-		// TODO[petr]: enable standup
-		// TODO[petr]: disable standup after last question posted
-		// TODO[petr]: if all 3 answers, add message to thread
-		bot.slack.SendReplyToChannel(standup.Thread.Channel, "Ответы", standup.Thread.Thread)
+		log.Infof("Starting standup for user #%s", userId)
+		go bot.startStandUpForUser(standup, userId)
 	}
+}
+
+func (bot *Bot) startStandUpForUser(standup *meeting.Meeting, userId string) {
+	privateUserChannel := bot.slack.OpenChatWithUser(userId)
+
+	if privateUserChannel.Id == "" {
+		return
+	}
+
+	bot.slack.SendMessageToChannel(privateUserChannel.Id, "Начинается утренний стэндап!")
+	bot.slack.SendMessageToChannel(privateUserChannel.Id, fmt.Sprintf("*%s*", standup.QuestionPrevious()))
+
+	// TODO[petr]: enable standup
+	// TODO[petr]: disable standup after last question posted
+
+	// TODO[petr]: if all 3 answers, add message to thread
+	bot.slack.SendReplyToChannel(standup.Thread.Channel, "Ответы", standup.Thread.Thread)
 }

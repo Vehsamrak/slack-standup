@@ -117,7 +117,7 @@ func (slack *Client) callApi(method string, parameters url.Values) []byte {
 		parameters = url.Values{}
 	}
 
-	log.Infof("Calling API: %s [%s]\n", method, parameters.Encode())
+	log.Debugf("Calling API: %s [%s]\n", method, parameters.Encode())
 
 	parameters.Add("token", slack.Config.Token)
 	parameters.Add("pretty", "1")
@@ -130,7 +130,7 @@ func (slack *Client) callApi(method string, parameters url.Values) []byte {
 
 	body, err := ioutil.ReadAll(resp.Body)
 
-	log.Infof("%s\n", body)
+	log.Infof("%s", body)
 
 	return body
 }

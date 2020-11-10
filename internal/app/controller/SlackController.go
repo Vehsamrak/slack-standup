@@ -70,10 +70,10 @@ func (controller *SlackController) Entrypoint(response http.ResponseWriter, requ
 		return
 	}
 
-	controller.slack.SendMessageToChannel(privateUserChannel.Id, "Начинается утренний стэндап!")
-	controller.slack.SendMessageToChannel(privateUserChannel.Id, "*Удалось выполнить предыдущий план?*")
-	controller.slack.SendMessageToChannel(privateUserChannel.Id, "*Что планируешь сделать сегодня?*")
-	controller.slack.SendMessageToChannel(privateUserChannel.Id, "*Кто и чем может тебе в этом помочь?*")
+	//controller.slack.SendMessageToChannel(privateUserChannel.Id, "Начинается утренний стэндап!")
+	//controller.slack.SendMessageToChannel(privateUserChannel.Id, "*Удалось выполнить предыдущий план?*")
+	//controller.slack.SendMessageToChannel(privateUserChannel.Id, "*Что планируешь сделать сегодня?*")
+	//controller.slack.SendMessageToChannel(privateUserChannel.Id, "*Кто и чем может тебе в этом помочь?*")
 
 	controller.Respond(response, "", http.StatusOK)
 }
