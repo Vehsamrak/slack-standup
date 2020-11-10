@@ -35,8 +35,8 @@ func (bot Bot) Start(config *config2.Config) {
 	log.Info("Bot stopped")
 }
 
-func (bot *Bot) listenIncomingMessages() {
-	slackController := controller.SlackController{}.Create(bot.slack)
+func (bot *Bot) listenIncomingMessages(standup *meeting.Meeting) {
+	slackController := controller.SlackController{}.Create(bot.slack, standup)
 
 	controllerMap := map[string]func(http.ResponseWriter, *http.Request){
 		"/":     slackController.Entrypoint,
@@ -71,7 +71,7 @@ func (bot *Bot) StartMeeting() {
 	standup := meeting.Meeting{}.Create(thread)
 
 	bot.startStandUpInChannel(standup)
-	bot.listenIncomingMessages()
+	bot.listenIncomingMessages(standup)
 }
 
 func (bot *Bot) startStandUpInChannel(standup *meeting.Meeting) {

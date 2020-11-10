@@ -6,6 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/vehsamrak/slack-standup/internal/app/controller/requests"
 	"github.com/vehsamrak/slack-standup/internal/app/event/messageIm"
+	"github.com/vehsamrak/slack-standup/internal/app/meeting"
 	"github.com/vehsamrak/slack-standup/internal/app/slack"
 	"io/ioutil"
 	"net/http"
@@ -15,7 +16,8 @@ const eventTypeMessage = "message"
 
 type SlackController struct {
 	Controller
-	slack *slack.Client
+	slack   *slack.Client
+	meeting *meeting.Meeting
 }
 
 func (controller *SlackController) Ping(response http.ResponseWriter, request *http.Request) {
@@ -70,14 +72,27 @@ func (controller *SlackController) Entrypoint(response http.ResponseWriter, requ
 		return
 	}
 
-	//controller.slack.SendMessageToChannel(privateUserChannel.Id, "Начинается утренний стэндап!")
-	//controller.slack.SendMessageToChannel(privateUserChannel.Id, "*Удалось выполнить предыдущий план?*")
-	//controller.slack.SendMessageToChannel(privateUserChannel.Id, "*Что планируешь сделать сегодня?*")
-	//controller.slack.SendMessageToChannel(privateUserChannel.Id, "*Кто и чем может тебе в этом помочь?*")
+	questions := controller.meeting.Participants[userId]
+
+	if questions.Previous == "" {
+		questions.Previous = event.Message.Text
+		controller.slack.SendMessageToChannel(privateUserChannel.Id, controller.meeting.QuestionToday())
+	} else if questions.Today == "" {
+		questions.Today = event.Message.Text
+		controller.slack.SendMessageToChannel(privateUserChannel.Id, controller.meeting.QuestionBlock())
+	} else if questions.Block == "" {
+		questions.Block = event.Message.Text
+		controller.slack.SendMessageToChannel(privateUserChannel.Id, "Спасибо, хорошего дня!")
+		controller.slack.SendReplyToChannel(
+			controller.meeting.Thread.Channel,
+			fmt.Sprintf("Ответы пользователя %s", userId),
+			controller.meeting.Thread.Thread,
+		)
+	}
 
 	controller.Respond(response, "", http.StatusOK)
 }
 
-func (controller SlackController) Create(slack *slack.Client) *SlackController {
-	return &SlackController{slack: slack}
+func (controller SlackController) Create(slack *slack.Client, standup *meeting.Meeting) *SlackController {
+	return &SlackController{slack: slack, meeting: standup}
 }
