@@ -1,3 +1,12 @@
+# Slack api URL
 api_url: "https://slack.com/api/"
+
+# Application port
 port: 7711
+
+# Bot token: xoxb..
 token: ""
+
+# Meeting channel name
+channel_names:
+  - "d"

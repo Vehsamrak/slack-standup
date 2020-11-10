@@ -90,11 +90,9 @@ func (controller *SlackController) Entrypoint(response http.ResponseWriter, requ
 		questions.Block = event.Message.Text
 		controller.slack.SendMessageToChannel(privateUserChannel.Id, "Спасибо, хорошего дня!")
 
-		message := controller.createMeetingResultMessage(userId, questions)
-
 		controller.slack.SendReplyToChannel(
 			controller.meeting.Thread.Channel,
-			message,
+			controller.createMeetingResultMessage(userId, questions),
 			controller.meeting.Thread.Thread,
 		)
 	}
