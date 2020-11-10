@@ -86,14 +86,14 @@ func (slack *Client) SendMessageToChannelByName(channelName string, message stri
 func (slack *Client) SendMessageToChannel(channelId string, message string) {
 	slack.callApi(
 		"chat.postMessage",
-		url.Values{"channel": {channelId}, "text": {message}},
+		url.Values{"channel": {channelId}, "text": {message}, "link_names": {"true"}},
 	)
 }
 
 func (slack *Client) SendReplyToChannel(channel string, message string, thread string) {
 	slack.callApi(
 		"chat.postMessage",
-		url.Values{"channel": {channel}, "text": {message}, "thread_ts": {thread}},
+		url.Values{"channel": {channel}, "text": {message}, "thread_ts": {thread}, "link_names": {"true"}},
 	)
 }
 
