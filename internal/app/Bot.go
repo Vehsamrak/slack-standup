@@ -26,9 +26,9 @@ func (bot Bot) Start(config *config2.Config) {
 
 	log.Info("Bot started")
 
-	//bot.StartMeeting()
+	bot.StartMeeting()
 
-	bot.listenIncomingMessages()
+	//bot.listenIncomingMessages()
 	//bot.answersWaitGroup.Add(1)
 	//bot.answersWaitGroup.Wait()
 
@@ -70,10 +70,11 @@ func (bot *Bot) StartMeeting() {
 
 	standup := meeting.Meeting{}.Create(thread)
 
-	bot.StartStandUpInChannel(standup)
+	bot.startStandUpInChannel(standup)
+	bot.listenIncomingMessages()
 }
 
-func (bot *Bot) StartStandUpInChannel(standup *meeting.Meeting) {
+func (bot *Bot) startStandUpInChannel(standup *meeting.Meeting) {
 	// TODO[petr]: how to receive channel name?
 	channelName := "d"
 	channel := bot.slack.FindChannelByName(channelName)
