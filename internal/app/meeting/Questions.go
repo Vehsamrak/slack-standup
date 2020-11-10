@@ -12,6 +12,10 @@ func (questions Questions) Create() *Questions {
 	return &Questions{}
 }
 
+func (questions Questions) Greetings() string {
+	return "Привет! Начинается утренний стэндап. Расскажи о своих успехах."
+}
+
 func (questions Questions) QuestionPrevious() string {
 	return "*Удалось выполнить предыдущий план?*"
 }

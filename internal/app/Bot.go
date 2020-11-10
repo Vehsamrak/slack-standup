@@ -55,7 +55,7 @@ func (bot *Bot) listenIncomingMessages(standup *meeting.Meeting) {
 func (bot *Bot) StartMeeting(channelName string) {
 	log.Info("Standup meeting created")
 
-	thread := bot.slack.SendMessageToChannelByName(channelName, "Начинается утренний стэндап!")
+	thread := bot.slack.SendMessageToChannelByName(channelName, meeting.Meeting{}.Greetings())
 	if thread == nil {
 		log.Info("Standup meeting ended with error. No thread found")
 		return
@@ -76,17 +76,17 @@ func (bot *Bot) startStandUpInChannel(standup *meeting.Meeting) {
 		log.Infof("Starting standup for user \"%s\" #%s", user.Name, user.Id)
 		standup.Participants[userId] = &meeting.Questions{}
 
-		go bot.startStandUpForUser(standup, userId)
+		go bot.startStandUpForUser(userId)
 	}
 }
 
-func (bot *Bot) startStandUpForUser(standup *meeting.Meeting, userId string) {
+func (bot *Bot) startStandUpForUser(userId string) {
 	privateUserChannel := bot.slack.OpenChatWithUser(userId)
 
 	if privateUserChannel.Id == "" {
 		return
 	}
 
-	bot.slack.SendMessageToChannel(privateUserChannel.Id, standup.QuestionGreetings())
+	bot.slack.SendMessageToChannel(privateUserChannel.Id, meeting.Questions{}.Greetings())
 	bot.slack.SendMessageToChannel(privateUserChannel.Id, meeting.Questions{}.QuestionPrevious())
 }

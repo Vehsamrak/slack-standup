@@ -12,8 +12,8 @@ func (meeting Meeting) Create(channelName string, thread *chatPostMessage.Thread
 	return &Meeting{Thread: thread, Participants: make(map[string]*Questions), channelName: channelName}
 }
 
-func (meeting *Meeting) QuestionGreetings() string {
-	return "Привет! Начинается утренний стэндап. Расскажи о своих успехах."
+func (meeting Meeting) Greetings() string {
+	return "Начинается утренний стэндап! @here"
 }
 
 func (meeting *Meeting) ChannelName() string {

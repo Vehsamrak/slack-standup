@@ -71,7 +71,7 @@ func (slack *Client) SendMessageToChannelByName(channelName string, message stri
 
 	response := slack.callApi(
 		"chat.postMessage",
-		url.Values{"channel": {channel.Id}, "text": {message}},
+		url.Values{"channel": {channel.Id}, "text": {message}, "link_names": {"true"}},
 	)
 
 	thread := &chatPostMessage.Thread{}
