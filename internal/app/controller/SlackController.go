@@ -69,10 +69,16 @@ func (controller *SlackController) Entrypoint(response http.ResponseWriter, requ
 
 	privateUserChannel := controller.slack.OpenChatWithUser(userId)
 	if privateUserChannel.Id == "" {
+		controller.Respond(response, "", http.StatusBadRequest)
 		return
 	}
 
 	questions := controller.meeting.Participants[userId]
+	if questions == nil {
+		log.Errorf("Users questions were not found for %s", userId)
+		controller.Respond(response, "", http.StatusBadRequest)
+		return
+	}
 
 	if questions.Previous == "" {
 		questions.Previous = event.Message.Text

@@ -82,6 +82,8 @@ func (bot *Bot) startStandUpInChannel(standup *meeting.Meeting) {
 
 	for _, userId := range users.Ids {
 		log.Infof("Starting standup for user #%s", userId)
+		standup.Participants[userId] = &meeting.Questions{}
+
 		go bot.startStandUpForUser(standup, userId)
 	}
 }
