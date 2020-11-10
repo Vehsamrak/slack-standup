@@ -82,21 +82,28 @@ func (controller *SlackController) Entrypoint(response http.ResponseWriter, requ
 
 	if questions.Previous == "" {
 		questions.Previous = event.Message.Text
-		controller.slack.SendMessageToChannel(privateUserChannel.Id, controller.meeting.QuestionToday())
+		controller.slack.SendMessageToChannel(privateUserChannel.Id, meeting.Questions{}.QuestionToday())
 	} else if questions.Today == "" {
 		questions.Today = event.Message.Text
-		controller.slack.SendMessageToChannel(privateUserChannel.Id, controller.meeting.QuestionBlock())
+		controller.slack.SendMessageToChannel(privateUserChannel.Id, meeting.Questions{}.QuestionBlock())
 	} else if questions.Block == "" {
 		questions.Block = event.Message.Text
 		controller.slack.SendMessageToChannel(privateUserChannel.Id, "Спасибо, хорошего дня!")
+
+		message := controller.createMeetingResultMessage(userId, questions)
+
 		controller.slack.SendReplyToChannel(
 			controller.meeting.Thread.Channel,
-			fmt.Sprintf("Ответы пользователя %s", userId),
+			message,
 			controller.meeting.Thread.Thread,
 		)
 	}
 
 	controller.Respond(response, "", http.StatusOK)
+}
+
+func (controller *SlackController) createMeetingResultMessage(userId string, questions *meeting.Questions) string {
+	return fmt.Sprintf("Ответы пользователя %s\n%s", userId, questions.Result())
 }
 
 func (controller SlackController) Create(slack *slack.Client, standup *meeting.Meeting) *SlackController {
