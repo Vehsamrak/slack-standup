@@ -26,6 +26,12 @@ func (questions Questions) QuestionBlock() string {
 
 func (questions *Questions) Result() string {
 	return fmt.Sprintf(
-		"%s\n%s\n%s", questions.Previous, questions.Today, questions.Block,
+		"%s\n%s\n%s\n%s\n%s\n%s",
+		questions.QuestionPrevious(),
+		questions.Previous,
+		questions.QuestionToday(),
+		questions.Today,
+		questions.QuestionBlock(),
+		questions.Block,
 	)
 }
