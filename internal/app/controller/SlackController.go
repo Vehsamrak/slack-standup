@@ -104,7 +104,7 @@ func (controller *SlackController) Entrypoint(response http.ResponseWriter, requ
 
 func (controller *SlackController) createMeetingResultMessage(userId string, questions *meeting.Questions) string {
 	user := controller.slack.UserInfo(userId)
-	return fmt.Sprintf("%s\n%s", user.NormalizedName(), questions.Result())
+	return fmt.Sprintf("@%s\n%s", user.NormalizedName(), questions.Result())
 }
 
 func (controller SlackController) Create(slack *slack.Client, standup *meeting.Meeting) *SlackController {
