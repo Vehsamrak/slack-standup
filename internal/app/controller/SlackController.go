@@ -17,16 +17,14 @@ const eventTypeMessage = "message"
 type SlackController struct {
 	Controller
 	slack          *slack.Client
-	meetingMap     map[string]*meeting.Meeting
 	participantMap map[string]*meeting.Meeting
 }
 
 func (controller SlackController) Create(
 	slack *slack.Client,
-	meetingMap map[string]*meeting.Meeting,
 	participantMap map[string]*meeting.Meeting,
 ) *SlackController {
-	return &SlackController{slack: slack, meetingMap: meetingMap, participantMap: participantMap}
+	return &SlackController{slack: slack, participantMap: participantMap}
 }
 
 func (controller *SlackController) Ping(response http.ResponseWriter, request *http.Request) {

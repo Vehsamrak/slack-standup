@@ -13,10 +13,9 @@ import (
 )
 
 type Bot struct {
-	slack          *slack.Client
-	config         *config.Config
-	standupMap     map[string]*meeting.Meeting
-	participantMap map[string]*meeting.Meeting
+	slack                 *slack.Client
+	config                *config.Config
+	participantMeetingMap map[string]*meeting.Meeting
 }
 
 func (bot Bot) Start(config *config.Config) {
@@ -24,27 +23,24 @@ func (bot Bot) Start(config *config.Config) {
 	bot.config = config
 	bot.slack = slack.Client{}.Create(config)
 
-	bot.standupMap = make(map[string]*meeting.Meeting)
-	bot.participantMap = make(map[string]*meeting.Meeting)
+	bot.participantMeetingMap = make(map[string]*meeting.Meeting)
 
 	log.Info("Bot started")
 
-	cronEvent := make(chan string)
+	startMeetingEvent := make(chan string)
 
 	channelNames := config.ChannelNames
 	for _, channelName := range channelNames {
 		cron := cron.New()
-		cron.AddFunc("0 * * * * *", func() {
-			cronEvent <- channelName
-		})
+		cron.AddFunc(config.MeetingSchedule, func() { startMeetingEvent <- channelName })
 		cron.Start()
 	}
 
-	for channelName := range cronEvent {
+	go bot.listenIncomingMessages()
+
+	for channelName := range startMeetingEvent {
 		bot.StartMeeting(channelName)
 	}
-
-	bot.listenIncomingMessages()
 
 	log.Info("Bot stopped")
 }
@@ -67,21 +63,25 @@ func (bot *Bot) StartMeeting(channelName string) {
 		user := bot.slack.UserInfo(userId)
 		log.Infof("Starting standup for user \"%s\" #%s", user.Name, user.Id)
 		standup.Participants[userId] = &meeting.Questions{}
-		bot.participantMap[userId] = standup
+		bot.participantMeetingMap[userId] = standup
 
-		go bot.startStandUpForUser(userId)
+		go bot.startMeetingForUser(userId)
 	}
 }
 
-func (bot *Bot) listenIncomingMessages() {
-	slackController := controller.SlackController{}.Create(bot.slack, bot.standupMap, bot.participantMap)
+func (bot *Bot) startMeetingForUser(userId string) {
+	privateUserChannel := bot.slack.OpenChatWithUser(userId)
 
-	controllerMap := map[string]func(http.ResponseWriter, *http.Request){
-		"/":     slackController.Entrypoint,
-		"/ping": slackController.Ping,
+	if privateUserChannel.Id == "" {
+		return
 	}
 
-	for route, controllerFunction := range controllerMap {
+	bot.slack.SendMessageToChannel(privateUserChannel.Id, meeting.Questions{}.Greetings())
+	bot.slack.SendMessageToChannel(privateUserChannel.Id, meeting.Questions{}.QuestionPrevious())
+}
+
+func (bot *Bot) listenIncomingMessages() {
+	for route, controllerFunction := range bot.createControllerMap() {
 		http.HandleFunc(route, controllerFunction)
 	}
 
@@ -95,13 +95,13 @@ func (bot *Bot) listenIncomingMessages() {
 	}
 }
 
-func (bot *Bot) startStandUpForUser(userId string) {
-	privateUserChannel := bot.slack.OpenChatWithUser(userId)
+func (bot *Bot) createControllerMap() map[string]func(http.ResponseWriter, *http.Request) {
+	slackController := controller.SlackController{}.Create(bot.slack, bot.participantMeetingMap)
 
-	if privateUserChannel.Id == "" {
-		return
+	controllerMap := map[string]func(http.ResponseWriter, *http.Request){
+		"/":     slackController.Entrypoint,
+		"/ping": slackController.Ping,
 	}
 
-	bot.slack.SendMessageToChannel(privateUserChannel.Id, meeting.Questions{}.Greetings())
-	bot.slack.SendMessageToChannel(privateUserChannel.Id, meeting.Questions{}.QuestionPrevious())
+	return controllerMap
 }

@@ -10,3 +10,6 @@ token: ""
 # Meeting channel name
 channel_names:
   - "d"
+
+# Meeting schedule (in crontab format with seconds)
+meeting_schedule: "0 * * * * *"

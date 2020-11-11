@@ -10,10 +10,11 @@ import (
 )
 
 type Config struct {
-	Token        string   `yaml:"token"`
-	ApiUrl       string   `yaml:"api_url"`
-	Port         int      `yaml:"port"`
-	ChannelNames []string `yaml:"channel_names"`
+	Token           string   `yaml:"token"`
+	ApiUrl          string   `yaml:"api_url"`
+	Port            int      `yaml:"port"`
+	ChannelNames    []string `yaml:"channel_names"`
+	MeetingSchedule string   `yaml:"meeting_schedule"`
 }
 
 func (Config) Load() *Config {
