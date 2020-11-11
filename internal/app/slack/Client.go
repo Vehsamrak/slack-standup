@@ -134,10 +134,10 @@ func (slack *Client) callApi(method string, parameters url.Values) []byte {
 		parameters = url.Values{}
 	}
 
-	log.Debugf("Calling API: %s [%s]\n", method, parameters.Encode())
-
 	parameters.Add("token", slack.Config.Token)
 	parameters.Add("pretty", "1")
+
+	log.Infof("Calling API: %s [%s]\n", method, parameters.Encode())
 
 	resp, err := http.Get(fmt.Sprintf("%s/%s?%s", slack.Config.ApiUrl, method, parameters.Encode()))
 	if err != nil {

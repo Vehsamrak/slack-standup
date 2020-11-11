@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 type Config struct {
@@ -16,9 +17,14 @@ type Config struct {
 }
 
 func (Config) Load() *Config {
-	fmt.Println("Loading configuration file")
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	file, err := os.Open("config.yml")
+	fmt.Printf("Loading configuration file: %s/config.yml", dir)
+
+	file, err := os.Open(dir + "/config.yml")
 	if err != nil {
 		log.Fatal(err)
 	}

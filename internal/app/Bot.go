@@ -7,13 +7,16 @@ import (
 	"github.com/vehsamrak/slack-standup/internal/app/meeting"
 	"github.com/vehsamrak/slack-standup/internal/app/slack"
 	"github.com/vehsamrak/slack-standup/internal/logger"
+	"gopkg.in/robfig/cron.v2"
 	"net/http"
 	"strconv"
 )
 
 type Bot struct {
-	slack  *slack.Client
-	config *config.Config
+	slack          *slack.Client
+	config         *config.Config
+	standupMap     map[string]*meeting.Meeting
+	participantMap map[string]*meeting.Meeting
 }
 
 func (bot Bot) Start(config *config.Config) {
@@ -21,36 +24,29 @@ func (bot Bot) Start(config *config.Config) {
 	bot.config = config
 	bot.slack = slack.Client{}.Create(config)
 
+	bot.standupMap = make(map[string]*meeting.Meeting)
+	bot.participantMap = make(map[string]*meeting.Meeting)
+
 	log.Info("Bot started")
+
+	cronEvent := make(chan string)
 
 	channelNames := config.ChannelNames
 	for _, channelName := range channelNames {
+		cron := cron.New()
+		cron.AddFunc("0 * * * * *", func() {
+			cronEvent <- channelName
+		})
+		cron.Start()
+	}
+
+	for channelName := range cronEvent {
 		bot.StartMeeting(channelName)
 	}
 
+	bot.listenIncomingMessages()
+
 	log.Info("Bot stopped")
-}
-
-func (bot *Bot) listenIncomingMessages(standup *meeting.Meeting) {
-	slackController := controller.SlackController{}.Create(bot.slack, standup)
-
-	controllerMap := map[string]func(http.ResponseWriter, *http.Request){
-		"/":     slackController.Entrypoint,
-		"/ping": slackController.Ping,
-	}
-
-	for route, controllerFunction := range controllerMap {
-		http.HandleFunc(route, controllerFunction)
-	}
-
-	httpServer := &http.Server{Addr: ":" + strconv.Itoa(bot.config.Port)}
-
-	log.Infof("Incoming Slack messages listener started on port %d", bot.config.Port)
-
-	err := httpServer.ListenAndServe()
-	if err != nil {
-		panic(err)
-	}
 }
 
 func (bot *Bot) StartMeeting(channelName string) {
@@ -64,11 +60,6 @@ func (bot *Bot) StartMeeting(channelName string) {
 
 	standup := meeting.Meeting{}.Create(channelName, thread)
 
-	bot.startStandUpInChannel(standup)
-	bot.listenIncomingMessages(standup)
-}
-
-func (bot *Bot) startStandUpInChannel(standup *meeting.Meeting) {
 	channel := bot.slack.FindChannelByName(standup.ChannelName())
 	users := bot.slack.ChannelUsersList(channel.Id)
 
@@ -76,8 +67,31 @@ func (bot *Bot) startStandUpInChannel(standup *meeting.Meeting) {
 		user := bot.slack.UserInfo(userId)
 		log.Infof("Starting standup for user \"%s\" #%s", user.Name, user.Id)
 		standup.Participants[userId] = &meeting.Questions{}
+		bot.participantMap[userId] = standup
 
 		go bot.startStandUpForUser(userId)
+	}
+}
+
+func (bot *Bot) listenIncomingMessages() {
+	slackController := controller.SlackController{}.Create(bot.slack, bot.standupMap, bot.participantMap)
+
+	controllerMap := map[string]func(http.ResponseWriter, *http.Request){
+		"/":     slackController.Entrypoint,
+		"/ping": slackController.Ping,
+	}
+
+	for route, controllerFunction := range controllerMap {
+		http.HandleFunc(route, controllerFunction)
+	}
+
+	httpServer := &http.Server{Addr: ":" + strconv.Itoa(bot.config.Port)}
+
+	log.Infof("Incoming Slack messages listener started on port %d", bot.config.Port)
+	err := httpServer.ListenAndServe()
+	if err != nil {
+		log.Error(err.Error())
+		panic(err)
 	}
 }
 

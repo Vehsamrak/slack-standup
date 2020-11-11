@@ -16,8 +16,17 @@ const eventTypeMessage = "message"
 
 type SlackController struct {
 	Controller
-	slack   *slack.Client
-	meeting *meeting.Meeting
+	slack          *slack.Client
+	meetingMap     map[string]*meeting.Meeting
+	participantMap map[string]*meeting.Meeting
+}
+
+func (controller SlackController) Create(
+	slack *slack.Client,
+	meetingMap map[string]*meeting.Meeting,
+	participantMap map[string]*meeting.Meeting,
+) *SlackController {
+	return &SlackController{slack: slack, meetingMap: meetingMap, participantMap: participantMap}
 }
 
 func (controller *SlackController) Ping(response http.ResponseWriter, request *http.Request) {
@@ -73,7 +82,8 @@ func (controller *SlackController) Entrypoint(response http.ResponseWriter, requ
 		return
 	}
 
-	questions := controller.meeting.Participants[userId]
+	standup := controller.participantMap[userId]
+	questions := standup.Participants[userId]
 	if questions == nil {
 		log.Errorf("Users questions were not found for %s", userId)
 		controller.Respond(response, "", http.StatusBadRequest)
@@ -91,9 +101,9 @@ func (controller *SlackController) Entrypoint(response http.ResponseWriter, requ
 		controller.slack.SendMessageToChannel(privateUserChannel.Id, "Спасибо, хорошего дня!")
 
 		controller.slack.SendReplyToChannel(
-			controller.meeting.Thread.Channel,
+			standup.Thread.Channel,
 			controller.createMeetingResultMessage(userId, questions),
-			controller.meeting.Thread.Thread,
+			standup.Thread.Thread,
 		)
 	}
 
@@ -103,8 +113,4 @@ func (controller *SlackController) Entrypoint(response http.ResponseWriter, requ
 func (controller *SlackController) createMeetingResultMessage(userId string, questions *meeting.Questions) string {
 	user := controller.slack.UserInfo(userId)
 	return fmt.Sprintf("@%s\n%s", user.NormalizedName(), questions.Result())
-}
-
-func (controller SlackController) Create(slack *slack.Client, standup *meeting.Meeting) *SlackController {
-	return &SlackController{slack: slack, meeting: standup}
 }
