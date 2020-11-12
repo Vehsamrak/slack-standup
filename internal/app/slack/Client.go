@@ -39,8 +39,16 @@ func (slack *Client) ChannelUsersList(channelName string) *conversationsMembers.
 	return users
 }
 
-func (slack *Client) channelsList() *conversationsList.ChannelsList {
-	response := slack.callApi("conversations.list", url.Values{"exclude_archived": {"true"}})
+// Retrieves one page of channels collection.
+// Use cursor as next page identifier.
+func (slack *Client) channelsList(cursor string) *conversationsList.ChannelsList {
+	parameters := url.Values{"exclude_archived": {"true"}}
+
+	if cursor != "" {
+		parameters.Add("cursor", cursor)
+	}
+
+	response := slack.callApi("conversations.list", parameters)
 	channels := &conversationsList.ChannelsList{}
 
 	err := json.Unmarshal(response, &channels)
@@ -52,11 +60,22 @@ func (slack *Client) channelsList() *conversationsList.ChannelsList {
 }
 
 func (slack *Client) FindChannelByName(channelName string) *conversationsList.Channel {
-	channels := slack.channelsList()
+	return slack.findChannelByNameUsingCursor(channelName, "")
+}
+
+func (slack *Client) findChannelByNameUsingCursor(
+	channelName string,
+	cursor string,
+) *conversationsList.Channel {
+	channels := slack.channelsList(cursor)
 	for _, channel := range channels.Channels {
 		if channel.Name == channelName {
 			return &channel
 		}
+	}
+
+	if channels.ResponseMetadata.NextCursor != "" {
+		return slack.findChannelByNameUsingCursor(channelName, channels.ResponseMetadata.NextCursor)
 	}
 
 	return nil
@@ -65,7 +84,7 @@ func (slack *Client) FindChannelByName(channelName string) *conversationsList.Ch
 func (slack *Client) SendMessageToChannelByName(channelName string, message string) *chatPostMessage.Thread {
 	channel := slack.FindChannelByName(channelName)
 	if channel == nil {
-		log.Info("Channel was not found. Can not send message", channelName)
+		log.Infof("Channel \"%s\" was not found. Can not send message", channelName)
 		return nil
 	}
 
@@ -135,7 +154,7 @@ func (slack *Client) callApi(method string, parameters url.Values) []byte {
 	}
 
 	parameters.Add("token", slack.Config.Token)
-	parameters.Add("pretty", "1")
+	//parameters.Add("pretty", "1")
 
 	log.Infof("Calling API: %s [%s]\n", method, parameters.Encode())
 

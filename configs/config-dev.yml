@@ -9,7 +9,7 @@ token: ""
 
 # Meeting channel name
 channel_names:
-  - "d"
+  - "bot-test-standup"
 
 # Meeting schedule (in crontab format with seconds)
-meeting_schedule: "0 * * * * *"
+meeting_schedule: "*/10 * * * * *"
