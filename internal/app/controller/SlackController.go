@@ -76,11 +76,18 @@ func (controller *SlackController) Entrypoint(response http.ResponseWriter, requ
 
 	privateUserChannel := controller.slack.OpenChatWithUser(userId)
 	if privateUserChannel.Id == "" {
+		log.Infof("Private channel was not opened and has no id: %#v", event)
 		controller.Respond(response, "", http.StatusBadRequest)
 		return
 	}
 
 	standup := controller.participantMap[userId]
+	if standup == nil {
+		log.Infof("Standup is not running for now: %#v", event)
+		controller.Respond(response, "", http.StatusOK)
+		return
+	}
+
 	questions := standup.Participants[userId]
 	if questions == nil {
 		log.Errorf("Users questions were not found for %s", userId)
