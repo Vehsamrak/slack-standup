@@ -42,7 +42,10 @@ func (slack *Client) ChannelUsersList(channelName string) *conversationsMembers.
 // Retrieves one page of channels collection.
 // Use cursor as next page identifier.
 func (slack *Client) channelsList(cursor string) *conversationsList.ChannelsList {
-	parameters := url.Values{"exclude_archived": {"true"}}
+	parameters := url.Values{
+		"exclude_archived": {"true"},
+		"types":            {"public_channel,private_channel"},
+	}
 
 	if cursor != "" {
 		parameters.Add("cursor", cursor)
